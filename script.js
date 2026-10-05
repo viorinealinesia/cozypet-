@@ -1,133 +1,86 @@
-const KEY="cozypet-v1";
-const defaults={name:"Mochi",species:"bunny",coins:120,level:1,exp:0,hunger:78,happiness:86,energy:74,health:92,clean:82,streak:1,lastClaim:"",sound:true,dark:false,ownedDecor:["rug"],decorEquipped:[],foods:{berry:0,carrot:0,cake:0},achievements:{}};
-let S=JSON.parse(localStorage.getItem(KEY)||"null")||structuredClone(defaults);
-let shopMode="food", soundOn=S.sound;
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const pets={bunny:{name:"Bunny",emoji:"🐰"},cat:{name:"Mimi",emoji:"🐱"},bear:{name:"Teddy",emoji:"🧸"},hamster:{name:"Nini",emoji:"🐹"},fox:{name:"Foxy",emoji:"🦊"},panda:{name:"Panda",emoji:"🐼"}};
+const foods=[{id:"berry",name:"Berry Cake",emoji:"🍓",price:12,hunger:18,happy:4},{id:"milk",name:"Strawberry Milk",emoji:"🥛",price:15,hunger:12,happy:8},{id:"cookie",name:"Cozy Cookie",emoji:"🍪",price:18,hunger:22,happy:6},{id:"honey",name:"Honey Toast",emoji:"🍯",price:25,hunger:28,happy:10}];
+const plants=[{id:"tulip",name:"Tulip",emoji:"🌷",cost:8,reward:18},{id:"sunflower",name:"Sunflower",emoji:"🌻",cost:12,reward:28},{id:"rose",name:"Rose",emoji:"🌹",cost:18,reward:40},{id:"strawberry",name:"Strawberry",emoji:"🍓",cost:22,reward:48}];
+const decor=[{name:"Cloud Pillow",emoji:"☁️",price:30},{name:"Tiny Lamp",emoji:"🛋️",price:45},{name:"Flower Vase",emoji:"🌸",price:55},{name:"Cozy Rug",emoji:"🧶",price:70},{name:"Moon Light",emoji:"🌙",price:100}];
 
-const species={bunny:"🐰",cat:"🐱",bear:"🐻",hamster:"🐹"};
-const foodItems=[
- {id:"berry",name:"Berry Bowl",emoji:"🍓",price:15,desc:"A sweet little snack.",effect:"+18 Hunger"},
- {id:"carrot",name:"Crunchy Carrot",emoji:"🥕",price:12,desc:"Mochi's classic favorite.",effect:"+14 Hunger"},
- {id:"cake",name:"Cozy Cake",emoji:"🍰",price:30,desc:"A special happy treat.",effect:"+25 Happiness"}
-];
-const decorItems=[
- {id:"rug",name:"Blush Rug",emoji:"🩷",price:35,desc:"A soft place to relax."},
- {id:"plant",name:"Tiny Plant",emoji:"🪴",price:45,desc:"Adds a little green to the room."},
- {id:"lamp",name:"Cozy Lamp",emoji:"🛋️",price:60,desc:"Warm vibes, always."},
- {id:"teddy",name:"Teddy Bear",emoji:"🧸",price:55,desc:"A cuddly room buddy."},
- {id:"flower",name:"Flower Vase",emoji:"🌷",price:40,desc:"A tiny pop of color."},
- {id:"star",name:"Star Light",emoji:"⭐",price:70,desc:"A dreamy night glow."}
-];
-const achievements=[
- {id:"firstcare",icon:"💗",title:"First Love",desc:"Do your first care action."},
- {id:"rich",icon:"🪙",title:"Little Saver",desc:"Have 250 coins."},
- {id:"level3",icon:"⭐",title:"Growing Up",desc:"Reach level 3."},
- {id:"play5",icon:"🎾",title:"Playmate",desc:"Play 5 times."},
- {id:"collector",icon:"🛋️",title:"Cozy Collector",desc:"Own 4 decorations."},
- {id:"streak3",icon:"🔥",title:"Three Cozy Days",desc:"Claim rewards for 3 days."}
-];
-function save(){localStorage.setItem(KEY,JSON.stringify(S));}
-function go(page){
- document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
- document.getElementById("page-"+page).classList.add("active");
- document.querySelectorAll("[data-page]").forEach(x=>x.classList.toggle("active",x.dataset.page===page));
- render();
- window.scrollTo({top:0,behavior:"smooth"});
+const fresh={
+ pet:"bunny", petName:"Mochi", coins:180,gems:12,level:1,xp:0,
+ hunger:80,happy:80,energy:80,clean:80,health:100,streak:1,
+ location:"home",weather:"sun",lastDay:"",rewardClaimed:false,
+ ownedPets:["bunny"], plants:{}, gardenSlots:3, decor:[], inventory:[],
+ quests:{care:0,play:0,garden:0,shop:0}, achievements:[],
+ sound:true, dark:false
+};
+let state=JSON.parse(localStorage.getItem("cozypet3"))||fresh;
+function save(){localStorage.setItem("cozypet3",JSON.stringify(state))}
+function clamp(n){return Math.max(0,Math.min(100,n))}
+function toast(t){const x=$("#toast");x.textContent=t;x.classList.add("show");setTimeout(()=>x.classList.remove("show"),1800)}
+function addXP(n){state.xp+=n;while(state.xp>=100){state.xp-=100;state.level++;state.coins+=30;toast("🎉 Level Up! +30 coins")}save()}
+function spend(c,g=0){if(state.coins<c||state.gems<g){toast("💭 Coins/Gems belum cukup");return false}state.coins-=c;state.gems-=g;return true}
+function action(type){
+ if(type==="feed"){state.hunger=clamp(state.hunger+20);state.energy=clamp(state.energy-2);state.happy=clamp(state.happy+5);state.quests.care++;addXP(10);toast("🍓 Yummy! Pet kenyang")}
+ if(type==="play"){if(state.energy<12){toast("😴 Pet terlalu lelah");return}state.happy=clamp(state.happy+18);state.energy=clamp(state.energy-14);state.hunger=clamp(state.hunger-5);state.quests.play++;addXP(14);toast("🎾 Seru banget!")}
+ if(type==="bath"){state.clean=100;state.happy=clamp(state.happy+6);state.quests.care++;addXP(9);toast("🫧 Fresh & clean!")}
+ if(type==="sleep"){state.energy=100;state.hunger=clamp(state.hunger-10);state.happy=clamp(state.happy+4);addXP(12);toast("🌙 Good night!")}
+ healthCalc(); save(); render();
 }
-document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.page)));
-
-function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(window.tt);window.tt=setTimeout(()=>t.classList.remove("show"),2200)}
-function beep(freq=500){if(!soundOn)return;try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;let c=new C(),o=c.createOscillator(),g=c.createGain();o.frequency.value=freq;o.type="sine";g.gain.value=.035;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.08)}catch(e){}}
-function petEmoji(){return species[S.species]||"🐰"}
-function clamp(v){return Math.max(0,Math.min(100,v))}
-function expNeed(){return 80+(S.level-1)*45}
-function addExp(n){S.exp+=n;while(S.exp>=expNeed()){S.exp-=expNeed();S.level++;toast("✨ Level up! CozyPet is now level "+S.level)}}
-function mood(){if(S.health<35)return ["Needs care","😟"];if(S.energy<25)return ["Sleepy","😴"];if(S.hunger<30)return ["Hungry","🥺"];if(S.happiness>75)return ["Happy","😊"];return ["Okay","🙂"]}
-
-function statCard(label,val,emoji){return `<div class="stat"><div class="stat-top"><span>${emoji} ${label}</span><b>${Math.round(val)}</b></div><div class="bar"><div class="fill" style="width:${val}%"></div></div></div>`}
+function healthCalc(){let avg=(state.hunger+state.happy+state.energy+state.clean)/4;state.health=clamp(Math.round(avg))}
+function mood(){let a=(state.hunger+state.happy+state.energy+state.clean)/4;if(state.energy<25)return["🥱","Sleepy"];if(a>80)return["🥰","Super Happy"];if(a>60)return["😊","Happy"];if(a>40)return["🙂","Okay"];return["🥺","Needs Care"]}
 function render(){
- document.getElementById("coins").textContent=S.coins;
- document.getElementById("shopCoins").textContent=S.coins;
- ["homePetName","homePetName2","petNameTitle","petNamePlate","roomPetName"].forEach(id=>{let e=document.getElementById(id);if(e)e.textContent=S.name});
- document.getElementById("heroPet").textContent=petEmoji();
- document.getElementById("bigPet").textContent=petEmoji();
- document.getElementById("level").textContent=S.level;
- document.getElementById("moodText").textContent=mood()[0];
- document.getElementById("moodBadge").textContent=mood()[1]+" "+mood()[0];
- document.getElementById("petSpeciesPlate").textContent=S.species[0].toUpperCase()+S.species.slice(1);
- document.getElementById("homeStats").innerHTML=statCard("Hunger",S.hunger,"🍓")+statCard("Happiness",S.happiness,"💗")+statCard("Energy",S.energy,"⚡")+statCard("Health",S.health,"❤️");
- document.getElementById("petStats").innerHTML=
-   statRow("Hunger",S.hunger,"🍓")+statRow("Happiness",S.happiness,"💗")+statRow("Energy",S.energy,"⚡")+statRow("Health",S.health,"❤️")+statRow("Clean",S.clean,"🫧");
- document.getElementById("streakText").textContent="Day "+S.streak;
- const claim=document.getElementById("dailyBtn"); claim.disabled=S.lastClaim===today(); claim.textContent=S.lastClaim===today()?"✓ Reward claimed today":"🪙 Claim 50 coins";
- renderShop();renderRoom();renderAchievements();
- document.getElementById("nameInput").value=S.name;document.getElementById("speciesInput").value=S.species;
- document.getElementById("soundInput").checked=S.sound;document.getElementById("darkInput").checked=S.dark;
- document.body.classList.toggle("dark",S.dark);
+ $("#coins").textContent=state.coins;$("#gems").textContent=state.gems;$("#level").textContent=state.level;$("#xpBar").style.width=state.xp+"%";
+ $("#hunger").textContent=Math.round(state.hunger);$("#happy").textContent=Math.round(state.happy);$("#energy").textContent=Math.round(state.energy);$("#clean").textContent=Math.round(state.clean);$("#health").textContent=Math.round(state.health);
+ $("#pet").textContent=pets[state.pet].emoji;$("#petName").textContent=state.petName;let m=mood();$("#mood").textContent=m[0]+" "+m[1];$("#weather").textContent=state.weather==="rain"?"🌧️":"☀️";
+ $("#streak").textContent=state.streak+" day streak";$("#collectionCount").textContent=state.ownedPets.length+" / 6 pets";
+ document.body.classList.toggle("dark",state.dark);renderWorld();renderQuests();renderCollection()
 }
-function statRow(label,val,emoji){return `<div class="bar-row"><div><span>${emoji} ${label}</span><span>${Math.round(val)}%</span></div><div class="bar"><div class="fill" style="width:${val}%"></div></div></div>`}
-function today(){return new Date().toISOString().slice(0,10)}
-
-function care(type){
- let before={...S};
- if(type==="feed"){S.hunger=clamp(S.hunger+18);S.health=clamp(S.health+3);S.energy=clamp(S.energy-3);toast("🍓 Yum! "+S.name+" enjoyed the food.")}
- if(type==="play"){if(S.energy<12){toast("😴 Too sleepy! Let "+S.name+" rest first.");return}S.happiness=clamp(S.happiness+20);S.energy=clamp(S.energy-12);S.hunger=clamp(S.hunger-7);S.exp+=12;S.playCount=(S.playCount||0)+1;toast("🎾 So much fun!")}
- if(type==="bath"){S.clean=clamp(S.clean+30);S.health=clamp(S.health+16);S.happiness=clamp(S.happiness+4);toast("🫧 Fresh and clean!")}
- if(type==="sleep"){S.energy=clamp(S.energy+25);S.health=clamp(S.health+4);S.happiness=clamp(S.happiness+3);toast("🌙 Sweet dreams!")}
- addExp(8);S.achievements.firstcare=true;save();beep(600);render();
+function renderWorld(){
+ const p=$("#worldPanel");
+ const data={
+ home:{icon:"🏠",title:"Cozy Home",sub:"Tempat paling nyaman untuk pet-mu.",html:`<div class="world-grid">
+ ${decor.map((d,i)=>`<div class="item"><div class="emoji">${d.emoji}</div><b>${d.name}</b><small>${state.decor.includes(i)?"Sudah dimiliki":"Bikin kamar makin cozy"}</small>${state.decor.includes(i)?"":"<button onclick='buyDecor("+i+")'>🪙 "+d.price+"</button>"}</div>`).join("")}</div>`},
+ garden:{icon:"🌷",title:"Flower Garden",sub:"Tanam, tunggu tumbuh, lalu panen.",html:`<div class="world-grid">${plants.map((p,i)=>{let st=state.plants[p.id];let ready=st&&Date.now()-st>=15000;return `<div class="item"><div class="emoji">${p.emoji}</div><b>${p.name}</b><small>${!st?"Siap ditanam":"Sedang tumbuh"} </small><button onclick="gardenAction('${p.id}')">${!st?"🌱 "+p.cost:(ready?"🧺 Panen":"⏳ Growing...")}</button></div>`}).join("")}</div>`},
+ cafe:{icon:"☕",title:"Cozy Café",sub:"Pesan makanan favorit untuk pet.",html:`<div class="world-grid">${foods.map(f=>`<div class="item"><div class="emoji">${f.emoji}</div><b>${f.name}</b><small>+${f.hunger} hunger · +${f.happy} happy</small><button onclick="buyFood('${f.id}')">🪙 ${f.price}</button></div>`).join("")}</div>`},
+ shop:{icon:"🛍️",title:"Town Shop",sub:"Cari item dan unlock pet baru.",html:`<div class="world-grid">
+ ${Object.entries(pets).filter(([id])=>!state.ownedPets.includes(id)).map(([id,p])=>`<div class="item"><div class="emoji">${p.emoji}</div><b>${p.name}</b><small>Pet baru untuk koleksi</small><button onclick="buyPet('${id}')">💎 8</button></div>`).join("")||"<div class='empty'>✨ Semua pet sudah terkumpul!</div>"}
+ <div class="item"><div class="emoji">🎁</div><b>Gem Chest</b><small>Exchange 80 coins menjadi 3 gems</small><button onclick="buyGems()">🪙 80</button></div>
+ </div>`},
+ park:{icon:"🎡",title:"Fun Park",sub:"Main cepat untuk mendapatkan reward.",html:`<div class="world-grid">
+ <div class="item"><div class="emoji">💖</div><b>Catch Hearts</b><small>Tap untuk menangkap hati.</small><button onclick="heartGame()">▶ Play</button></div>
+ <div class="item"><div class="emoji">🧠</div><b>Cozy Quiz</b><small>Jawab pertanyaan sederhana.</small><button onclick="quizGame()">▶ Play</button></div>
+ <div class="item"><div class="emoji">🎰</div><b>Lucky Leaf</b><small>Coba keberuntungan sekali sehari.</small><button onclick="lucky()">▶ Try</button></div>
+ </div>`}
+ };
+ let d=data[state.location];p.innerHTML=`<div class="world-title"><span class="big">${d.icon}</span><div><span class="eyebrow">CURRENT LOCATION</span><h2>${d.title}</h2><small>${d.sub}</small></div></div>${d.html}`
 }
-document.getElementById("dailyBtn").onclick=()=>{
- if(S.lastClaim===today())return;
- S.coins+=50;S.lastClaim=today();S.streak++;S.achievements.streak3=S.streak>=3;save();toast("🪙 +50 coins!");beep(800);render()
+function renderQuests(){
+ const qs=[["care","🫶 Care for pet",3,10],["play","🎾 Play together",2,12],["garden","🌱 Harvest garden",2,15],["shop","🛍️ Buy something",1,18]];
+ $("#quests").innerHTML=qs.map(q=>`<div class="quest"><div class="quest-row"><b>${q[1]}</b><span>${Math.min(state.quests[q[0]],q[2])}/${q[2]}</span></div><small>Reward: ${q[3]} XP</small><progress value="${Math.min(state.quests[q[0]],q[2])}" max="${q[2]}"></progress></div>`).join("")
 }
-function renderShop(){
- let arr=shopMode==="food"?foodItems:decorItems;
- document.getElementById("shopGrid").innerHTML=arr.map(x=>{
- let owned=shopMode==="decor"&&S.ownedDecor.includes(x.id);
- let foodCount=shopMode==="food"?S.foods[x.id]||0:0;
- return `<div class="shop-item"><div class="shop-emoji">${x.emoji}</div><h3>${x.name}</h3><p>${x.desc} ${x.effect||""}</p><div class="price-row"><b>🪙 ${x.price}</b>${shopMode==="food"?`<button class="buy" onclick="buyFood('${x.id}')">Buy</button>`:`<button class="buy ${owned?"owned":""}" ${owned?"disabled":""} onclick="buyDecor('${x.id}')">${owned?"Owned":"Buy"}</button>`}</div>${shopMode==="food"?`<small style="color:#9a8589">Owned: ${foodCount}</small>`:""}</div>`
- }).join("");
+function renderCollection(){
+ $("#petCollection").innerHTML=Object.entries(pets).map(([id,p])=>`<div class="pet-card ${state.ownedPets.includes(id)?"":"locked"}"><div class="pemoji">${state.ownedPets.includes(id)?p.emoji:"❔"}</div><b>${state.ownedPets.includes(id)?p.name:"Locked"}</b></div>`).join("")
 }
-document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");shopMode=b.dataset.shop;renderShop()});
-function buyFood(id){let x=foodItems.find(a=>a.id===id);if(S.coins<x.price){toast("🪙 Not enough coins!");return}S.coins-=x.price;S.foods[id]++;save();toast("🍓 Added to your pantry!");beep(700);render()}
-function buyDecor(id){let x=decorItems.find(a=>a.id===id);if(S.ownedDecor.includes(id))return;if(S.coins<x.price){toast("🪙 Not enough coins!");return}S.coins-=x.price;S.ownedDecor.push(id);S.achievements.collector=S.ownedDecor.length>=4;save();toast("🛋️ New decor unlocked!");beep(700);render()}
-function renderRoom(){
- let list=decorItems.filter(x=>S.ownedDecor.includes(x.id));
- document.getElementById("decorCount").textContent=list.length;
- document.getElementById("decorList").innerHTML=list.map(x=>`<div class="inventory-item"><span>${x.emoji} <b>${x.name}</b></span><button onclick="toggleDecor('${x.id}')">${S.decorEquipped.includes(x.id)?"Remove":"Place"}</button></div>`).join("");
- const positions={rug:"left:25%;bottom:70px;font-size:42px",plant:"left:12%;bottom:175px",lamp:"right:12%;bottom:180px",teddy:"right:27%;bottom:75px",flower:"right:12%;top:175px",star:"left:30%;top:80px"};
- document.getElementById("roomDecor").innerHTML=S.decorEquipped.map(id=>{let x=decorItems.find(a=>a.id===id);return x?`<div class="decor-item" style="${positions[id]||""}">${x.emoji}</div>`:""}).join("");
+function buyDecor(i){if(state.decor.includes(i))return;if(spend(decor[i].price)){state.decor.push(i);state.quests.shop++;addXP(7);toast("🏠 Decor added!");save();render()}}
+function buyFood(id){let f=foods.find(x=>x.id===id);if(spend(f.price)){state.hunger=clamp(state.hunger+f.hunger);state.happy=clamp(state.happy+f.happy);state.quests.shop++;addXP(6);toast(f.emoji+" Pet menikmati "+f.name);save();render()}}
+function buyPet(id){if(state.ownedPets.includes(id))return;if(spend(0,8)){state.ownedPets.push(id);addXP(30);toast("🎉 Pet baru unlocked!");save();render()}}
+function buyGems(){if(spend(80)){state.gems+=3;toast("💎 +3 gems");save();render()}}
+function gardenAction(id){let p=plants.find(x=>x.id===id),st=state.plants[id];if(!st){if(spend(p.cost)){state.plants[id]=Date.now();toast("🌱 Benih ditanam!");save();render()}}else if(Date.now()-st>=15000){delete state.plants[id];state.coins+=p.reward;state.quests.garden++;addXP(15);toast("🧺 Panen! +"+p.reward+" coins");save();render()}else toast("⏳ Belum tumbuh, tunggu sebentar")}
+function heartGame(){let reward=10+Math.floor(Math.random()*25);state.coins+=reward;state.happy=clamp(state.happy+10);addXP(12);toast("💖 Kamu menang! +"+reward+" coins");save();render()}
+function quizGame(){let q=[["Hewan mana yang suka wortel?","bunny"],["Minuman cozy apa yang populer?","milk"],["Tanaman berwarna kuning?","sunflower"]][Math.floor(Math.random()*3)];let ans=prompt(q[0]+"\\nKetik jawaban: bunny / milk / sunflower");if(ans&&ans.toLowerCase().trim()===q[1]){state.coins+=30;addXP(20);toast("🧠 Benar! +30 coins")}else toast("🙈 Belum tepat");save();render()}
+function lucky(){if(localStorage.getItem("lucky3")===new Date().toDateString()){toast("🌙 Coba lagi besok");return}localStorage.setItem("lucky3",new Date().toDateString());let win=Math.random()>.35; if(win){state.gems+=2;state.coins+=20;toast("🍀 Lucky! +2 gems +20 coins")}else toast("🍃 Hampir! Coba besok");save();render()}
+function daily(){
+ let d=new Date().toDateString();if(state.lastDay===d){toast("🎁 Reward hari ini sudah diambil");return}
+ state.lastDay=d;state.rewardClaimed=true;state.coins+=50;state.gems+=1;state.streak++;addXP(20);toast("🎁 Daily Reward +50 coins +1 gem");save();render()
 }
-function toggleDecor(id){if(S.decorEquipped.includes(id))S.decorEquipped=S.decorEquipped.filter(x=>x!==id);else{if(S.decorEquipped.length>=4){toast("Room is full! Remove one first.");return}S.decorEquipped.push(id)}save();renderRoom()}
-function renderAchievements(){
- let map={firstcare:!!S.achievements.firstcare,rich:S.coins>=250,level3:S.level>=3,play5:(S.playCount||0)>=5,collector:S.ownedDecor.length>=4,streak3:S.streak>=3};
- document.getElementById("achievementGrid").innerHTML=achievements.map(a=>`<div class="card achievement ${map[a.id]?"":"locked"}"><div class="ach-icon">${a.icon}</div><div><h3>${a.title}</h3><small>${a.desc}</small></div>${map[a.id]?"<span>✓</span>":""}</div>`).join("");
-}
-function saveProfile(){let n=document.getElementById("nameInput").value.trim();if(n)S.name=n;S.species=document.getElementById("speciesInput").value;save();toast("💗 Profile saved!");render()}
-document.getElementById("soundBtn").onclick=()=>{S.sound=!S.sound;soundOn=S.sound;save();render();beep(600)}
-document.getElementById("soundInput").onchange=e=>{S.sound=e.target.checked;soundOn=S.sound;save()}
-document.getElementById("darkInput").onchange=e=>{S.dark=e.target.checked;save();render()}
-function resetGame(){if(confirm("Reset semua progress CozyPet?")){localStorage.removeItem(KEY);location.reload()}}
-function passive(){
- S.hunger=clamp(S.hunger-.7);S.happiness=clamp(S.happiness-.35);S.energy=clamp(S.energy-.18);S.health=clamp(S.health+(S.hunger<20?-0.3:.05));S.clean=clamp(S.clean-.25);
- save();render();
-}
-setInterval(passive,30000);
-function startHearts(){
- const modal=document.getElementById("gameModal"),box=document.getElementById("gameBox");modal.classList.add("show");
- let score=0,time=15;
- box.innerHTML=`<div class="game-header"><div><h2>💗 Catch the Hearts</h2><small>Catch them before time runs out!</small></div><button class="close-game" onclick="closeGame()">×</button></div><div class="game-header"><b>Score: <span id="gScore">0</span></b><b>⏱️ <span id="gTime">15</span>s</b></div><div class="heart-area" id="heartArea"></div>`;
- const area=document.getElementById("heartArea");
- let spawn=setInterval(()=>{let h=document.createElement("button");h.className="heart-target";h.textContent=["💗","💖","💕","❤️"][Math.floor(Math.random()*4)];h.style.left=Math.random()*88+"%";h.style.top=Math.random()*82+"%";h.onclick=()=>{score++;document.getElementById("gScore").textContent=score;h.remove();beep(900)};area.appendChild(h);setTimeout(()=>h.remove(),1000)},500);
- let timer=setInterval(()=>{time--;document.getElementById("gTime").textContent=time;if(time<=0){clearInterval(timer);clearInterval(spawn);S.coins+=score*4;S.happiness=clamp(S.happiness+Math.min(20,score));S.playCount=(S.playCount||0)+1;S.achievements.play5=S.playCount>=5;addExp(15);save();toast("🎉 Game over! +"+(score*4)+" coins");closeGame();render()}},1000);
-}
-function startMemory(){
- const modal=document.getElementById("gameModal"),box=document.getElementById("gameBox");modal.classList.add("show");
- let icons=["🍓","🌷","⭐","🧸","🍓","🌷","⭐","🧸"].sort(()=>Math.random()-.5),open=[],matched=0;
- box.innerHTML=`<div class="game-header"><div><h2>🧠 Cozy Memory</h2><small>Find all matching pairs.</small></div><button class="close-game" onclick="closeGame()">×</button></div><div class="memory-grid">${icons.map((_,i)=>`<button class="memory-card" data-i="${i}">?</button>`).join("")}</div>`;
- document.querySelectorAll(".memory-card").forEach(btn=>btn.onclick=()=>{
-  let i=+btn.dataset.i;if(open.includes(i)||btn.classList.contains("matched"))return;btn.textContent=icons[i];btn.classList.add("open");open.push(i);
-  if(open.length===2){let[a,b]=open;if(icons[a]===icons[b]){document.querySelectorAll(".memory-card")[a].classList.add("matched");document.querySelectorAll(".memory-card")[b].classList.add("matched");matched++;open=[];beep(900);if(matched===4){S.coins+=45;S.happiness=clamp(S.happiness+20);S.playCount=(S.playCount||0)+1;S.achievements.play5=S.playCount>=5;addExp(20);save();toast("🏆 Perfect match! +45 coins");setTimeout(closeGame,700);render()}}else setTimeout(()=>{document.querySelectorAll(".memory-card")[a].textContent="?";document.querySelectorAll(".memory-card")[b].textContent="?";document.querySelectorAll(".memory-card")[a].classList.remove("open");document.querySelectorAll(".memory-card")[b].classList.remove("open");open=[]},650)}
- });
-}
-function closeGame(){document.getElementById("gameModal").classList.remove("show")}
-render();
+function setLocation(l){state.location=l;$$(".location").forEach(x=>x.classList.toggle("active",x.dataset.location===l));renderWorld();save()}
+$$("[data-action]").forEach(b=>b.onclick=()=>action(b.dataset.action));
+$$(".location").forEach(b=>b.onclick=()=>setLocation(b.dataset.location));
+$("#rewardBtn").onclick=daily;
+$("#settingsBtn").onclick=()=>openSettings();
+$("#closeModal").onclick=()=>$("#modal").classList.remove("show");
+function openSettings(){openModal(`<h2>⚙️ Cozy Settings</h2><label>Nama Pet</label><input id="nameInput" value="${state.petName}" style="width:100%;padding:12px;border:1px solid #eadedb;border-radius:12px;margin:7px 0 14px"><label>Spesies</label><select id="speciesInput" style="width:100%;padding:12px;border:1px solid #eadedb;border-radius:12px;margin:7px 0 14px">${Object.entries(pets).map(([id,p])=>`<option value="${id}" ${id===state.pet?"selected":""}>${p.emoji} ${p.name}</option>`).join("")}</select><button class="wide-btn" onclick="saveSettings()">💾 Save Settings</button><br><br><button class="wide-btn" onclick="resetGame()">🗑️ Reset Game</button>`)}
+function saveSettings(){state.petName=$("#nameInput").value.trim()||"Mochi";state.pet=$("#speciesInput").value;save();$("#modal").classList.remove("show");toast("✨ Settings saved");render()}
+function resetGame(){if(confirm("Reset semua progress CozyPet?")){localStorage.removeItem("cozypet3");location.reload()}}
+function openModal(html){$("#modalContent").innerHTML=html;$("#modal").classList.add("show")}
+function tick(){let hour=new Date().getHours();let night=hour>=18||hour<6;$("#timeLabel").textContent=night?"🌙 Night":"☀️ Day";state.weather=Math.random()>.88?"rain":"sun";if(Math.random()<.06)$("#speech").textContent=["Mau jalan-jalan? 🥺","Aku suka tempat ini! 🌷","Yummy! 🍓","Zzz... 😴","Kita main yuk! 🎾"][Math.floor(Math.random()*5)];healthCalc();save();render()}
+tick();setInterval(tick,30000);
