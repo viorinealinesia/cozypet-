@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f8dde5">
+<meta name="description" content="CozyPet — Your little virtual friend. Virtual pet game yang cozy dan cute.">
+<title>CozyPet — Your Little Virtual Friend</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="toast"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">🐾</div>
+    <div><b>CozyPet</b><small>Your little virtual friend</small></div>
+  </div>
+  <div class="wallet">
+    <span>🪙</span><strong id="coins">120</strong>
+    <button class="icon-btn" id="soundBtn" title="Suara">🔊</button>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <button class="nav active" data-page="home">🏠 <span>Home</span></button>
+    <button class="nav" data-page="pet">🐾 <span>My Pet</span></button>
+    <button class="nav" data-page="room">🛏️ <span>My Room</span></button>
+    <button class="nav" data-page="shop">🛍️ <span>Shop</span></button>
+    <button class="nav" data-page="games">🎮 <span>Mini Games</span></button>
+    <button class="nav" data-page="achievements">🏆 <span>Achievements</span></button>
+    <button class="nav" data-page="settings">⚙️ <span>Settings</span></button>
+    <div class="sidebar-bottom">CozyPet v1.0<br><span>Made for cozy days ♡</span></div>
+  </aside>
+
+  <main>
+    <!-- HOME -->
+    <section class="page active" id="page-home">
+      <div class="hero">
+        <div>
+          <p class="eyebrow">WELCOME HOME ✦</p>
+          <h1>Hi, <span id="homePetName">Mochi</span>! 🐰</h1>
+          <p class="muted">Your little friend is waiting for some love today.</p>
+          <div class="hero-actions">
+            <button class="primary" onclick="go('pet')">🐾 Take care</button>
+            <button class="secondary" onclick="go('games')">🎮 Play together</button>
+          </div>
+        </div>
+        <div class="hero-pet"><div class="spark s1">✦</div><div class="spark s2">♡</div><div id="heroPet" class="pet-bounce">🐰</div></div>
+      </div>
+
+      <div class="section-head"><div><h2>Today with <span id="homePetName2">Mochi</span></h2><p>Keep your pet happy, healthy and cozy.</p></div><div class="level-pill">Lv. <span id="level">1</span> · <span id="moodText">Happy</span></div></div>
+      <div class="stats-grid" id="homeStats"></div>
+
+      <div class="grid-2">
+        <div class="card daily-card">
+          <div class="card-title"><h3>☀️ Daily reward</h3><span id="streakText">Day 1</span></div>
+          <p>Come back every day to collect cozy coins.</p>
+          <button class="primary full" id="dailyBtn">🪙 Claim 50 coins</button>
+        </div>
+        <div class="card">
+          <div class="card-title"><h3>✨ Quick care</h3></div>
+          <div class="quick-actions">
+            <button onclick="care('feed')">🍓<span>Feed</span></button>
+            <button onclick="care('play')">🎾<span>Play</span></button>
+            <button onclick="care('bath')">🛁<span>Bath</span></button>
+            <button onclick="care('sleep')">🌙<span>Sleep</span></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PET -->
+    <section class="page" id="page-pet">
+      <div class="section-head"><div><p class="eyebrow">MY PET</p><h1>Meet <span id="petNameTitle">Mochi</span> 🐾</h1><p>Take care of your tiny best friend.</p></div></div>
+      <div class="pet-layout">
+        <div class="card pet-stage">
+          <div class="room-wall"></div><div class="window">☁️<br>🌿</div>
+          <div class="big-pet" id="bigPet">🐰</div>
+          <div class="pet-nameplate"><b id="petNamePlate">Mochi</b><span id="petSpeciesPlate">Bunny</span></div>
+          <div class="pet-floor"></div>
+        </div>
+        <div class="care-panel">
+          <div class="card">
+            <div class="card-title"><h3>Pet status</h3><span id="moodBadge" class="badge">Happy</span></div>
+            <div id="petStats"></div>
+          </div>
+          <div class="card">
+            <h3>Give some love ♡</h3>
+            <div class="care-grid">
+              <button onclick="care('feed')"><i>🍓</i><b>Feed</b><small>+18 hunger</small></button>
+              <button onclick="care('play')"><i>🎾</i><b>Play</b><small>+20 happy</small></button>
+              <button onclick="care('bath')"><i>🛁</i><b>Bath</b><small>+16 health</small></button>
+              <button onclick="care('sleep')"><i>🌙</i><b>Sleep</b><small>+25 energy</small></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROOM -->
+    <section class="page" id="page-room">
+      <div class="section-head"><div><p class="eyebrow">MY ROOM</p><h1>A cozy place for <span id="roomPetName">Mochi</span> 🏡</h1><p>Decorations you own can be equipped here.</p></div></div>
+      <div class="room-layout">
+        <div class="card room-scene" id="roomScene">
+          <div class="room-sun">☀️</div><div class="room-window">🌿<br>☁️ ☁️</div>
+          <div id="roomDecor"></div><div class="room-pet">🐰</div><div class="rug">⌁ ⌁ ⌁</div>
+        </div>
+        <div class="card inventory"><div class="card-title"><h3>My decorations</h3><span id="decorCount">0</span></div><div id="decorList"></div></div>
+      </div>
+    </section>
+
+    <!-- SHOP -->
+    <section class="page" id="page-shop">
+      <div class="section-head"><div><p class="eyebrow">COZY SHOP</p><h1>Little things, big joy 🛍️</h1><p>Use coins to unlock food and room decorations.</p></div><div class="coins-large">🪙 <span id="shopCoins">120</span></div></div>
+      <div class="shop-tabs"><button class="tab active" data-shop="food">🍓 Food</button><button class="tab" data-shop="decor">🛋️ Decor</button></div>
+      <div class="shop-grid" id="shopGrid"></div>
+    </section>
+
+    <!-- GAMES -->
+    <section class="page" id="page-games">
+      <div class="section-head"><div><p class="eyebrow">MINI GAMES</p><h1>Play time! 🎮</h1><p>Earn coins while making your pet happy.</p></div></div>
+      <div class="games-grid">
+        <div class="card game-card"><div class="game-icon">💗</div><h3>Catch the Hearts</h3><p>Click as many hearts as you can in 15 seconds.</p><button class="primary full" onclick="startHearts()">Play · +coins</button></div>
+        <div class="card game-card"><div class="game-icon">🧠</div><h3>Cozy Memory</h3><p>Match all the cute pairs to earn a reward.</p><button class="secondary full" onclick="startMemory()">Play · +coins</button></div>
+      </div>
+      <div class="game-modal" id="gameModal"><div class="game-box" id="gameBox"></div></div>
+    </section>
+
+    <!-- ACHIEVEMENTS -->
+    <section class="page" id="page-achievements">
+      <div class="section-head"><div><p class="eyebrow">ACHIEVEMENTS</p><h1>Cozy milestones 🏆</h1><p>Little steps count.</p></div></div>
+      <div class="achievement-grid" id="achievementGrid"></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="page" id="page-settings">
+      <div class="section-head"><div><p class="eyebrow">SETTINGS</p><h1>Make CozyPet yours ⚙️</h1></div></div>
+      <div class="settings-grid">
+        <div class="card setting-card"><h3>🐾 Pet profile</h3>
+          <label>Pet name<input id="nameInput" maxlength="14" placeholder="Mochi"></label>
+          <label>Pet type<select id="speciesInput"><option value="bunny">🐰 Bunny</option><option value="cat">🐱 Cat</option><option value="bear">🐻 Bear</option><option value="hamster">🐹 Hamster</option></select></label>
+          <button class="primary" onclick="saveProfile()">Save profile</button>
+        </div>
+        <div class="card setting-card"><h3>🎨 Preferences</h3>
+          <label class="switch-row">Sound effects <input type="checkbox" id="soundInput" checked><span class="switch"></span></label>
+          <label class="switch-row">Dark cozy mode <input type="checkbox" id="darkInput"><span class="switch"></span></label>
+          <hr>
+          <button class="danger" onclick="resetGame()">Reset all progress</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="mobile-nav">
+  <button class="active" data-page="home">🏠<span>Home</span></button>
+  <button data-page="pet">🐾<span>Pet</span></button>
+  <button data-page="room">🛏️<span>Room</span></button>
+  <button data-page="shop">🛍️<span>Shop</span></button>
+  <button data-page="games">🎮<span>Play</span></button>
+</nav>
+<script src="script.js"></script>
+</body>
+</html>
